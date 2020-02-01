@@ -1,0 +1,10 @@
+{
+    "classes": [
+        {
+            "name": "animations",
+            "members": [
+                "../assets/animations/loadingStates.flr"
+            ]
+        }
+    ]
+}
