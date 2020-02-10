@@ -102,7 +102,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver{
           alignment: Alignment(0, -0.8),
           child: InkWell(
             onTap: () async{
-              const uri = 'mailto:judeosby@gmail.com?subject=Suggestion or Error';
+              const uri = 'https://github.com/judeosbert/anydrop-desktop/releases';
               if (await canLaunch(uri)) {
               await launch(uri);
               } else {

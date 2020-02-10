@@ -1,5 +1,5 @@
 class Strings{
-  static final String appName = "LocalShare";
+  static final String appName = "AnyDrop";
 }
 
 class ReleaseValues{
