@@ -10,4 +10,5 @@ class PortToPingArguments extends IpToPortArguments{
   String constructUrl(){
     return buildUrl(ip, port,"");
   }
+
 }

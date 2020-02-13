@@ -5,38 +5,15 @@ import android.annotation.TargetApi
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.os.Bundle
-import android.os.Parcelable
 import android.provider.OpenableColumns
 import android.util.Log
-import androidx.annotation.NonNull;
+import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
-import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugins.GeneratedPluginRegistrant
 
 class MainActivity: FlutterActivity() {
     private val channelName="app.channel.share"
     private val TAG="ANYDROP_ANDROID"
     private var sharedData:MutableMap<String,ByteArray> = mutableMapOf()
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        flutterEngine?.let {
-            GeneratedPluginRegistrant.registerWith(it)
-
-            handleSendIntent(intent)
-            MethodChannel(it.dartExecutor.binaryMessenger,channelName)
-                    .setMethodCallHandler { methodCall, result ->
-                        Log.d(TAG,"Call to method Channel")
-                        if(methodCall.method == "getSharedData"){
-                            result.success(sharedData)
-                            sharedData = mutableMapOf()
-                        }
-                    }
-        }
-
-    }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -54,9 +31,9 @@ class MainActivity: FlutterActivity() {
             for (i in 0 until sharedItemCount){
                 val uri = intent.clipData?.getItemAt(i)?.uri
                 uri?.let {
-                    val inputStream = contentResolver.openInputStream(it);
+                    val inputStream = contentResolver.openInputStream(it)
                     inputStream?.let {stream->
-                        val fileName = getFilename(it);
+                        val fileName = getFilename(it)
                         sharedData[fileName] = stream.readBytes()
                     }
 
@@ -71,7 +48,7 @@ class MainActivity: FlutterActivity() {
         contentResolver.query(uri,
                 null,null,null,null)?.use {
             cursor ->
-            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
             cursor.moveToFirst()
             return cursor.getString(nameIndex)
         }

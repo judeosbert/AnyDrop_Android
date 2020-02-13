@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:AnyDrop/pages/PingPage.dart';
-import 'package:AnyDrop/pages/PortPage.dart';
 import 'package:AnyDrop/values/Values.dart';
 import 'package:AnyDrop/values/arguments/IpToPortArguments.dart';
 import 'package:AnyDrop/values/arguments/PortToPingArguments.dart';
+import 'package:flutter/material.dart';
 class PortPage extends StatefulWidget {
   static final routeName = "/port";
   @override
@@ -12,7 +11,7 @@ class PortPage extends StatefulWidget {
 
 class _PortPageState extends State<PortPage> {
   final _formKey = GlobalKey<FormState>();
-  String _port = "8080";
+  String _port = "22562";
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,6 +45,7 @@ class _PortPageState extends State<PortPage> {
                 child: Form(
                   key: _formKey,
                   child: TextFormField(
+                    readOnly: true,
                     initialValue: _port,
                     validator: (value){
                       Pattern ipPattern = r'[0-9]{4}';

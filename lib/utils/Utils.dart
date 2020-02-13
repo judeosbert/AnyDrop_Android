@@ -1,6 +1,7 @@
 
 import 'dart:async';
 
+import 'package:AnyDrop/helpers/SharedPrefManager.dart';
 import 'package:AnyDrop/values/DataModels.dart';
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
@@ -33,3 +34,14 @@ void doSnackbar(BuildContext context,String message,{SnackbarType type = Snackba
     duration:Duration(milliseconds: durationInMilli),
   )..show(context);
 }
+
+Future<bool> isHelpWindowShown() async {
+  await SharedPrefManager.init();
+  debugPrint("Shared Pref init Complete frm isHelpWindowShown");
+  return Future.value(
+      SharedPrefManager.getBool(SharedPrefKeys.isHelpWindowShown));
+}
+
+
+void setHelpWindowShown() =>
+    SharedPrefManager.setBool(SharedPrefKeys.isHelpWindowShown, true);

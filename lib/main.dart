@@ -1,12 +1,14 @@
-import 'package:AnyDrop/pages/UpdatePage.dart';
-import 'package:flutter/material.dart';
 import 'package:AnyDrop/pages/HomePage.dart';
 import 'package:AnyDrop/pages/HomeScreen.dart';
 import 'package:AnyDrop/pages/PingPage.dart';
 import 'package:AnyDrop/pages/PortPage.dart';
 import 'package:AnyDrop/pages/ScanPage.dart';
+import 'package:AnyDrop/pages/UpdatePage.dart';
+import 'package:flutter/material.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -23,7 +25,7 @@ class MyApp extends StatelessWidget {
         brightness:Brightness.light,
         primarySwatch: Colors.blue,
         textTheme: TextTheme(
-          display1: TextStyle(
+            headline4: TextStyle(
             color: Colors.black87
           )
         )

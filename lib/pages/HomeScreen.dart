@@ -4,7 +4,7 @@ import 'package:AnyDrop/pages/widgets/ActionsItem.dart';
 import 'package:AnyDrop/pages/widgets/ConnectionStatusBar.dart';
 import 'package:AnyDrop/pages/widgets/TransactionsList.dart';
 import 'package:AnyDrop/values/Values.dart';
-import 'package:AnyDrop/values/arguments/PortToPingArguments.dart';
+import 'package:AnyDrop/values/arguments/PingArgument.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -18,7 +18,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    PortToPingArguments argument = ModalRoute.of(context).settings.arguments;
+    PingArgument argument = ModalRoute
+        .of(context)
+        .settings
+        .arguments;
     return Scaffold(
       appBar: AppBar(
         elevation: 0,

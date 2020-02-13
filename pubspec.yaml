@@ -24,10 +24,13 @@ dependencies:
   file_picker: ^1.4.3+2
   timeago: ^2.0.22
   wifi: ^0.1.5
-  flushbar: ^1.9.1
+  flushbar:
+    git:
+      url: https://github.com/AndreHaueisen/flushbar.git
   open_file: ^2.1.1
   url_launcher: ^5.4.1
   advertising_id: ^0.9.2
+  shared_preferences: ^0.5.6+1
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^0.1.2

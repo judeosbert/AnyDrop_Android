@@ -1,16 +1,15 @@
 import 'dart:typed_data';
 
-import 'package:AnyDrop/utils/ConnectionManager.dart';
-import 'package:AnyDrop/pages/HomeScreen.dart';
 import 'package:AnyDrop/pages/UpdatePage.dart';
-import 'package:flutter/material.dart';
-import 'package:AnyDrop/pages/PingPage.dart';
+import 'package:AnyDrop/pages/widgets/ConnectionHelpWidget.dart';
+import 'package:AnyDrop/pages/widgets/DiscoveredHostList.dart';
+import 'package:AnyDrop/utils/ConnectionManager.dart';
+import 'package:AnyDrop/utils/Utils.dart';
 import 'package:AnyDrop/values/DataModels.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'HomePage.dart';
-import 'package:AnyDrop/utils/Utils.dart';
 
 class ScanPage extends StatefulWidget {
   static final String routeName = "/";
@@ -22,15 +21,24 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver{
   static const _channel = const MethodChannel("app.channel.share");
   Map<String,Uint8List> _incomingData = Map();
   TextEditingController controller = TextEditingController();
-  bool _isButtonEnabled = false;
-
 
   @override
   void initState() {
     super.initState();
     _checkForUpdate();
     _handleSharedIntent();
+    checkAndShowHelpWindow();
    WidgetsBinding.instance.addObserver(this);
+  }
+
+  void checkAndShowHelpWindow() {
+    Future.delayed(Duration(milliseconds: 200), () async {
+      var isShown = await isHelpWindowShown();
+      debugPrint("Shared Pref is Help Window Shown $isShown");
+      if (!isShown) {
+        showHelpWindow(context);
+      }
+    });
   }
 
 
@@ -80,99 +88,45 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver{
     print("Size build ${_incomingData.length}");
     if(_incomingData.isNotEmpty){
       if(ConnectionManager.isConnected){
-        Navigator.of(context).pushNamed(HomePage.routeName);
+        Navigator.of(context).pushReplacementNamed(HomePage.routeName);
         return Container();
       }
     }
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        title: Text("Scanning for Servers"),
+        title: Text("Anydrop"),
+        centerTitle: true,
+        actions: <Widget>[
+          FlatButton.icon(onPressed: () {
+            showHelpWindow(context);
+          },
+              icon: Icon(Icons.help), label: Text("Help"))
+        ],
       ),
-      body: Stack(children: <Widget>[
-        Align(
-          alignment: Alignment(0, -0.9),
+      body: Column(children: <Widget>[
+        Expanded(
           child: Container(
-            margin: EdgeInsets.only(left: 8),
-            child: Text("How to use",
-            style: Theme.of(context).textTheme.headline,),
-          ),
+              margin: EdgeInsets.only(top: 30),
+              child: DiscoveredHostList()),
         ),
-        Align(
-          alignment: Alignment(0, -0.8),
-          child: InkWell(
-            onTap: () async{
-              const uri = 'https://github.com/judeosbert/anydrop-desktop/releases';
-              if (await canLaunch(uri)) {
-              await launch(uri);
-              } else {
-              doSnackbar(context, "Could not find a browser in your device. Try googleing",type: SnackbarType.ERROR);
-              }
-            },
-            child: Container(
-                margin: EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                    "Start the server in your laptop. Type in the ip below. If you dont have a server download it from judeosbert.github.io/anydrop-desktop",
-                style: TextStyle(color: Colors.blue,decoration: TextDecoration.underline),)),
-          ),
-        ),
-        Align(
-          alignment: Alignment(0, -0.3),
-          child: Container(
-            padding: EdgeInsets.all(16),
-            margin: EdgeInsets.symmetric(vertical: 16),
-            child: TextFormField(
-              controller: controller,
-              onChanged: (value) {
-                Pattern ipPattern = r'[0-9]{4}';
-                RegExp ipExp = RegExp(ipPattern);
-                if (!ipExp.hasMatch(value)) {
-                  return "Enter proper port number";
-                } else {
-                  setState(() {
-                    _isButtonEnabled = true;
-                  });
-                }
-                return null;
-              },
-              autovalidate: true,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                  hintText: "Enter port of your laptop eg 8080"),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-        Align(
-          alignment: Alignment.center,
-          child: RaisedButton(
-            onPressed: !_isButtonEnabled
-                ? null
-                : () {
-                    discoverIps();
-                  },
-            child: Text("Start Scan"),
-          ),
-        )
       ]),
+
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.of(context).pushNamed(HomePage.routeName);
         },
-        label: Text("Try Manual Entry"),
+        label: Text("Advanced Connection"),
       ),
     );
   }
 
-  void discoverIps() async {
-    scanForHosts(controller.text).then((result) {
-      if (result.isAlive) {
-        ConnectionManager.setArgument(result);
-        Navigator.popAndPushNamed(context, HomeScreen.routeName,
-            arguments: result);
-      }
-    }).catchError((error) {
-      print(error.cause);
+  void showHelpWindow(BuildContext buildContext) async {
+    await showDialog(context: buildContext, builder: (_) {
+      return ConnectionHelpWidget();
+    }).whenComplete(() {
+      setHelpWindowShown();
     });
   }
 }
