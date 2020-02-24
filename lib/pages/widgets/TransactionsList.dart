@@ -1,13 +1,16 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
-import 'package:flutter/material.dart';
 import 'package:AnyDrop/pages/widgets/RetryButton.dart';
 import 'package:AnyDrop/utils/Utils.dart';
+import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path/path.dart';
 import 'package:timeago/timeago.dart' as timeago;
 class TransactionsList extends StatefulWidget {
   final Key key;
+
   TransactionsList({this.key}):super(key:key);
 
   @override
@@ -17,20 +20,18 @@ class TransactionsList extends StatefulWidget {
 class TransactionsListState extends State<TransactionsList> {
   List<Transaction> transactions = [];
 
-  void addStringTransaction(String value,bool isSuccess){
-    StringTransaction t = StringTransaction(value: value, isSuccess: isSuccess);
+  void addStringTransaction(StringTransaction t) {
     setState(() {
-      transactions.insert(0,t);
+      insertOrUpdate(t);
     });
   }
 
-  void addFileTransaction(File file,bool isSuccess){
-    FileTransaction t = FileTransaction(file: file,isSuccess: isSuccess);
+  void addFileTransaction(FileTransaction t) {
     setState(() {
-      transactions.insert(0,t);
+      insertOrUpdate(t);
     });
-
   }
+
   @override
   Widget build(BuildContext context) {
     return Expanded(
@@ -64,27 +65,36 @@ class TransactionsListState extends State<TransactionsList> {
           },
           child: Container(
             margin: EdgeInsets.symmetric(vertical: 16,horizontal: 8),
-            child: ListTile(
-              leading: _getIconForTransaction(currentTransaction),
-              title: Text(currentTransaction.getTitle()),
-              subtitle: Text(timeago.format(currentTransaction.timestamp)),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
+            child: Wrap(
                 children: <Widget>[
-                  _getSpecificAction(context,currentTransaction,index),
-                  IconButton(icon: Icon(Icons.delete), onPressed: (){
-                    setState(() {
-                      transactions.removeAt(index);
-                    });
-                  })
-                ],
-              ),
-            ) ,
+                  Column(
+                    children: <Widget>[
+                      ListTile(
+                        leading: _getIconForTransaction(currentTransaction),
+                        title: Text(currentTransaction.getTitle()),
+                        subtitle: Text(timeago.format(currentTransaction
+                            .timestamp)),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            _getSpecificAction(
+                                context, currentTransaction, index),
+                            IconButton(icon: Icon(Icons.delete), onPressed: () {
+                              setState(() {
+                                transactions.removeAt(index);
+                              });
+                            })
+                          ],
+                        ),
+                      ),
+                      checkAndShowProgressbar(currentTransaction),
+                    ],
+                  ),
+                ]),
           ),
         );
-        },
-      itemCount: transactions.length,);
-
+      },
+        itemCount: transactions.length,);
     }
   }
 
@@ -121,8 +131,6 @@ class TransactionsListState extends State<TransactionsList> {
         },
       );
     }
-
-
   }
 
   Icon _getIconForTransaction(Transaction t){
@@ -135,7 +143,6 @@ class TransactionsListState extends State<TransactionsList> {
         break;
     }
     return Icon(Icons.device_unknown);
-
   }
 
   void _openFileViewer(FileTransaction t) async{
@@ -149,25 +156,65 @@ class TransactionsListState extends State<TransactionsList> {
       doSnackbar(context, "Error copying text to clipboard");
     });
   }
+
+  void insertOrUpdate(Transaction t) {
+    for (int i = 0; i < transactions.length; i++) {
+      if (transactions[i].id == t.id) {
+        transactions[i] = t;
+        return;
+      }
+    }
+
+    transactions.insert(0, t);
+  }
+
+  Widget checkAndShowProgressbar(Transaction currentTransaction) {
+    return currentTransaction.isInProgress ?
+    SizedBox(
+        height: 2,
+        child: LinearProgressIndicator()
+    )
+        : Container();
+  }
 }
 
 abstract class Transaction{
+  String id;
   TransactionTypes type;
   bool isSuccess;
+  bool isInProgress;
   DateTime timestamp;
-  Transaction({@required this.type, @required this.isSuccess}){
+
+  Transaction(
+      {@required this.type, @required this.isSuccess, @required this.isInProgress}) {
+    id = DateTime
+        .now()
+        .millisecondsSinceEpoch
+        .toString() + _getRandomKey();
     refreshTimestamp();
+  }
+
+  String _getRandomKey() {
+    Random _random = Random.secure();
+    var values = List<int>.generate(10, (i) => _random.nextInt(256));
+
+    return base64Url.encode(values);
   }
 
   void refreshTimestamp(){
     timestamp = DateTime.now();
   }
+
   String getTitle();
 }
 
 class StringTransaction extends Transaction{
   String value;
-  StringTransaction({@required this.value,bool isSuccess}):super(type:TransactionTypes.STRING,isSuccess:isSuccess);
+
+  StringTransaction({@required this.value, bool isSuccess, bool isInProgress})
+      :super(type: TransactionTypes.STRING,
+      isSuccess: isSuccess,
+      isInProgress: isInProgress);
 
   @override
   String getTitle()=>value;
@@ -175,7 +222,12 @@ class StringTransaction extends Transaction{
 
 class FileTransaction extends Transaction{
   File file;
-  FileTransaction({@required this.file,bool isSuccess}):super(type:TransactionTypes.FILE,isSuccess:isSuccess);
+
+  FileTransaction(
+      {@required this.file, bool isSuccess, @required bool isInProgress})
+      :super(type: TransactionTypes.FILE,
+      isSuccess: isSuccess,
+      isInProgress: isInProgress);
 
   @override
   String getTitle()=>basename(file.path);

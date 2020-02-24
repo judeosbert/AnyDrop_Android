@@ -1,21 +1,21 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:AnyDrop/utils/ConnectionManager.dart';
-import 'package:AnyDrop/pages/widgets/FileUploadIndicator.dart';
 import 'package:AnyDrop/pages/widgets/TextInputWidget.dart';
+import 'package:AnyDrop/pages/widgets/TransactionsList.dart';
+import 'package:AnyDrop/utils/ConnectionManager.dart';
 import 'package:AnyDrop/utils/Utils.dart';
 import 'package:AnyDrop/values/DataModels.dart';
 import 'package:AnyDrop/values/arguments/PortToPingArguments.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:advertising_id/advertising_id.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ActionsMenu extends StatefulWidget {
-  final Function onStringSend;
+  final Function(StringTransaction) onStringSend;
   final PortToPingArguments argument;
-  final Function onFileSend;
+  final Function(FileTransaction) onFileSend;
   ActionsMenu({@required this.argument,@required this.onStringSend,@required this.onFileSend});
 
   @override
@@ -24,7 +24,7 @@ class ActionsMenu extends StatefulWidget {
 
 class _ActionsMenuState extends State<ActionsMenu> {
   final actionItems = [
-    ActionItem(name: "String", icon: Icon(Icons.font_download)),
+    ActionItem(name: "Text", icon: Icon(Icons.font_download)),
     ActionItem(name: "File", icon: Icon(Icons.attach_file)),
     ActionItem(name: "Suggestions", icon: Icon(Icons.alternate_email)),
     ActionItem(name: "Adv Id",icon: Icon(Icons.monetization_on))
@@ -104,9 +104,14 @@ class _ActionsMenuState extends State<ActionsMenu> {
 
   void startAdvIdFlow(BuildContext context) async{
     String id = await AdvertisingId.id;
+    StringTransaction transaction = StringTransaction(
+        value: id, isSuccess: false, isInProgress: true);
+    widget.onStringSend(transaction);
     ConnectionManager cm = ConnectionManager.getInstance();
     cm.sendString(id).then((success){
-      widget.onStringSend(success,id);
+      transaction.isInProgress = false;
+      transaction.isSuccess = success;
+      widget.onStringSend(transaction);
     });
   }
 
@@ -124,16 +129,21 @@ class _ActionsMenuState extends State<ActionsMenu> {
     if(selectedFiles.isEmpty){
       return;
     }
-    GlobalKey<FileUploadIndicatorState> uploaderKey = GlobalKey<FileUploadIndicatorState>();
-    showDialog(context: context,builder: (_){
-      return FileUploadIndicator(uploaderKey,selectedFiles.length);
-    });
+//    GlobalKey<FileUploadIndicatorState> uploaderKey = GlobalKey<FileUploadIndicatorState>();
+//    showDialog(context: context,builder: (_){
+//      return FileUploadIndicator(uploaderKey,selectedFiles.length);
+//    });
     ConnectionManager cm = ConnectionManager.getInstance();
     for(int i = 0;i < selectedFiles.length;i++){
       File f = selectedFiles[i];
+      FileTransaction transaction = FileTransaction(
+          file: f, isInProgress: true, isSuccess: false);
+      widget.onFileSend(transaction);
       cm.sendFile(f).then((isSuccess){
-        uploaderKey.currentState.notifyFileComplete();
-        widget.onFileSend(isSuccess,f);
+        transaction.isSuccess = isSuccess;
+        transaction.isInProgress = false;
+//        uploaderKey.currentState.notifyFileComplete();
+        widget.onFileSend(transaction);
       });
     }
   }

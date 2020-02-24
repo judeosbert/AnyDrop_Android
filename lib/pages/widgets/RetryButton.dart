@@ -19,6 +19,7 @@ class _RetryButtonState extends State<RetryButton> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
+    _isRetrying = widget.transaction.isInProgress ?? false;
     _controller = AnimationController(vsync: this,duration: Duration(seconds: 1));
     _controller.repeat();
   }

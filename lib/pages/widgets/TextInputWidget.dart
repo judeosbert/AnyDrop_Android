@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:AnyDrop/pages/widgets/TransactionsList.dart';
 import 'package:AnyDrop/utils/ConnectionManager.dart';
 import 'package:AnyDrop/values/arguments/PortToPingArguments.dart';
+import 'package:flutter/material.dart';
 class TextInputWidget extends StatefulWidget {
-  final Function onStringSend;
+  final Function(StringTransaction) onStringSend;
   final PortToPingArguments argument;
   TextInputWidget(this.onStringSend,this.argument);
   @override
@@ -61,9 +62,14 @@ class _TextInputWidgetState extends State<TextInputWidget> {
     return _isSendButtonEnabled?_sendFunction:null;
   }
   void _sendFunction(){
+    StringTransaction transaction = StringTransaction(
+        value: controller.text, isSuccess: false, isInProgress: true);
+    widget.onStringSend(transaction);
     ConnectionManager cm = ConnectionManager.getInstance();
     cm.sendString(controller.text).then((success){
-      widget.onStringSend(success,controller.text);
+      transaction.isSuccess = success;
+      transaction.isInProgress = false;
+      widget.onStringSend(transaction);
       Navigator.of(context).pop();
     });
   }

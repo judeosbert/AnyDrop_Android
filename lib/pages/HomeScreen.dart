@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:AnyDrop/pages/widgets/ActionsItem.dart';
 import 'package:AnyDrop/pages/widgets/ConnectionStatusBar.dart';
 import 'package:AnyDrop/pages/widgets/TransactionsList.dart';
@@ -61,12 +59,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void onStringSend(bool isSuccess,String data){
-    transactionsListStateKey.currentState.addStringTransaction(data,isSuccess);
+  void onStringSend(StringTransaction transaction) {
+    transactionsListStateKey.currentState.addStringTransaction(transaction);
   }
 
-  void onFileSend(bool isSuccess,File file){
-    transactionsListStateKey.currentState.addFileTransaction(file, isSuccess);
+  void onFileSend(FileTransaction transaction) {
+    transactionsListStateKey.currentState.addFileTransaction(transaction);
   }
 
 
