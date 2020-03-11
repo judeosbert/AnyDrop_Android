@@ -4,12 +4,10 @@ import 'package:AnyDrop/AssetManager.dart';
 import 'package:AnyDrop/pages/HomePage.dart';
 import 'package:AnyDrop/pages/HomeScreen.dart';
 import 'package:AnyDrop/utils/ConnectionManager.dart';
-import 'package:AnyDrop/utils/Utils.dart';
 import 'package:AnyDrop/values/arguments/PingArgument.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' show get;
 class PingPage extends StatefulWidget {
   static final String  routeName = "/ping";
   @override
@@ -29,7 +27,7 @@ class _PingPageState extends State<PingPage> {
   @override
   void dispose() {
     super.dispose();
-        timer.cancel();
+    timer.cancel();
   }
 
   @override
@@ -110,26 +108,19 @@ class _PingPageState extends State<PingPage> {
         .of(context)
         .settings
         .arguments;
-    String url = buildUrl(argument.ip, argument.port, "ping");
-    debugPrint("url:" + url);
 
-    try{
-      var result = await get(url).timeout(Duration(seconds: 10));
-      if (result.statusCode == 200) {
-        setState(() {
-          _pingState = PingState.SUCCESS;
-        });
-        navigateToDashboard(argument);
-      }
-      else {
-       setFailedState();
-      }
 
-    }catch(_){
-      setFailedState();
-
+    var isPingSuccess = await ping(argument.ip, argument.port);
+    if (isPingSuccess) {
+      setState(() {
+        _pingState = PingState.SUCCESS;
+      });
+      _establishSocketConnection(argument);
+      navigateToDashboard(argument);
     }
-
+    else {
+      setFailedState();
+    }
   }
 
   void setFailedState(){
@@ -147,14 +138,15 @@ class _PingPageState extends State<PingPage> {
   }
 
   void navigateToDashboard(PingArgument arguments) {
-    ConnectionManager.mArgument = arguments;
     Future.delayed(Duration(seconds: 1),(){
       Navigator.pushNamedAndRemoveUntil(context,
           HomeScreen.routeName,
           ModalRoute.withName(HomePage.routeName),arguments: arguments);
     });
+  }
 
-
+  void _establishSocketConnection(PingArgument arguments) {
+    ConnectionManager.getInstance(argument: arguments).connectWebsocket();
   }
 }
 

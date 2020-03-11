@@ -1,5 +1,13 @@
 import 'package:AnyDrop/values/Values.dart';
 
+abstract class Enum<T> {
+  final T value;
+
+  const Enum(this.value);
+
+  T fromValue(T value);
+}
+
 enum SnackbarType{
   INFO,ERROR
 }

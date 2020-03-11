@@ -63,12 +63,10 @@ class _TextInputWidgetState extends State<TextInputWidget> {
   }
   void _sendFunction(){
     StringTransaction transaction = StringTransaction(
-        value: controller.text, isSuccess: false, isInProgress: true);
+      value: controller.text,);
     widget.onStringSend(transaction);
     ConnectionManager cm = ConnectionManager.getInstance();
     cm.sendString(controller.text).then((success){
-      transaction.isSuccess = success;
-      transaction.isInProgress = false;
       widget.onStringSend(transaction);
       Navigator.of(context).pop();
     });

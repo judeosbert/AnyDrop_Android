@@ -12,6 +12,10 @@ String buildUrl(String domain,String port,String path){
   return "http://"+domain+":"+port+"/"+path;
 }
 
+String buildWebsocketUrl(String domain, String port) {
+  return "ws://" + domain + ":" + port;
+}
+
 
 
 Future<void> copyToClipboard(String data) =>

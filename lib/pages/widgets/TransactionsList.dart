@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:AnyDrop/pages/widgets/RetryButton.dart';
+import 'package:AnyDrop/utils/ConnectionManager.dart';
 import 'package:AnyDrop/utils/Utils.dart';
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
@@ -20,20 +22,21 @@ class TransactionsList extends StatefulWidget {
 class TransactionsListState extends State<TransactionsList> {
   List<Transaction> transactions = [];
 
-  void addStringTransaction(StringTransaction t) {
-    setState(() {
+  void addStringTransaction(StringTransaction t) =>
       insertOrUpdate(t);
-    });
-  }
 
-  void addFileTransaction(FileTransaction t) {
-    setState(() {
+
+  void addFileTransaction(FileTransaction t) =>
       insertOrUpdate(t);
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
+    ConnectionManager.getInstance().getChannel().listen((event) {
+
+    });
+    ConnectionManager.getInstance().getChannel().listen((event) {
+
+    });
     return Expanded(
         child: _getListOrEmptyScreen()
     );
@@ -68,6 +71,7 @@ class TransactionsListState extends State<TransactionsList> {
             child: Wrap(
                 children: <Widget>[
                   Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       ListTile(
                         leading: _getIconForTransaction(currentTransaction),
@@ -79,7 +83,17 @@ class TransactionsListState extends State<TransactionsList> {
                           children: <Widget>[
                             _getSpecificAction(
                                 context, currentTransaction, index),
-                            IconButton(icon: Icon(Icons.delete), onPressed: () {
+                            IconButton(
+                                icon: Icon(Icons.delete), onPressed: () async {
+                              if (currentTransaction.dataStreamController !=
+                                  null) {
+                                if (!currentTransaction.dataStreamController
+                                    .isClosed) {
+                                  await currentTransaction.dataStreamController
+                                      .close();
+                                }
+                                currentTransaction.dataStreamController = null;
+                              }
                               setState(() {
                                 transactions.removeAt(index);
                               });
@@ -99,7 +113,7 @@ class TransactionsListState extends State<TransactionsList> {
   }
 
   Widget _getSpecificAction(BuildContext context,Transaction t,int index){
-    if(t.isSuccess) {
+    if (t.isInProgress || t.isSuccess) {
       switch (t.type) {
         case TransactionTypes.STRING:
           StringTransaction stringTransaction = t as StringTransaction;
@@ -122,12 +136,8 @@ class TransactionsListState extends State<TransactionsList> {
     }else{
       return RetryButton(
         transaction: t,
-        onSuccess: (){
-          t.isSuccess = true;
-          t.refreshTimestamp();
-          setState(() {
-            transactions.replaceRange(index, index+1, [t]);
-          });
+        onFileSend: (Transaction transaction) {
+          insertOrUpdate(transaction);
         },
       );
     }
@@ -160,19 +170,24 @@ class TransactionsListState extends State<TransactionsList> {
   void insertOrUpdate(Transaction t) {
     for (int i = 0; i < transactions.length; i++) {
       if (transactions[i].id == t.id) {
-        transactions[i] = t;
+        setState(() {
+          transactions[i] = t;
+        });
         return;
       }
     }
-
-    transactions.insert(0, t);
+    setState(() {
+      transactions.insert(0, t);
+    });
   }
 
   Widget checkAndShowProgressbar(Transaction currentTransaction) {
     return currentTransaction.isInProgress ?
     SizedBox(
         height: 2,
-        child: LinearProgressIndicator()
+        child: LinearProgressIndicator(
+          value: currentTransaction.progressPercent,
+        )
     )
         : Container();
   }
@@ -181,17 +196,21 @@ class TransactionsListState extends State<TransactionsList> {
 abstract class Transaction{
   String id;
   TransactionTypes type;
-  bool isSuccess;
-  bool isInProgress;
   DateTime timestamp;
+  double progressPercent;
+  StreamController<List<int>> dataStreamController;
 
-  Transaction(
-      {@required this.type, @required this.isSuccess, @required this.isInProgress}) {
+  bool get isInProgress => progressPercent != 1.0;
+
+  bool get isSuccess => progressPercent == 1.0;
+
+  Transaction({@required this.type}) {
     id = DateTime
         .now()
         .millisecondsSinceEpoch
         .toString() + _getRandomKey();
     refreshTimestamp();
+    progressPercent = 0;
   }
 
   String _getRandomKey() {
@@ -211,10 +230,8 @@ abstract class Transaction{
 class StringTransaction extends Transaction{
   String value;
 
-  StringTransaction({@required this.value, bool isSuccess, bool isInProgress})
-      :super(type: TransactionTypes.STRING,
-      isSuccess: isSuccess,
-      isInProgress: isInProgress);
+  StringTransaction({@required this.value})
+      :super(type: TransactionTypes.STRING);
 
   @override
   String getTitle()=>value;
@@ -223,11 +240,8 @@ class StringTransaction extends Transaction{
 class FileTransaction extends Transaction{
   File file;
 
-  FileTransaction(
-      {@required this.file, bool isSuccess, @required bool isInProgress})
-      :super(type: TransactionTypes.FILE,
-      isSuccess: isSuccess,
-      isInProgress: isInProgress);
+  FileTransaction({@required this.file})
+      :super(type: TransactionTypes.FILE);
 
   @override
   String getTitle()=>basename(file.path);

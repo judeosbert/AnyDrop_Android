@@ -16,27 +16,35 @@ class ConnectionStatusBar extends StatefulWidget {
 
 class _ConnectionStatusBarState extends State<ConnectionStatusBar> {
   PingState _currentState = PingState.SUCCESS;
-  Timer timer;
+  Timer _timer;
 
   @override
   void dispose() {
-    timer.cancel();
+    _timer.cancel();
     super.dispose();
   }
 
   @override
   void initState() {
     super.initState();
-    timer = Timer.periodic(Duration(seconds: 10), (Timer timer) {
-      setState(() {
-        _currentState = PingState.PINGING;
-      });
-      ping(widget.argument.ip, widget.argument.port).then((bool success) {
+    _currentState = PingState.SUCCESS;
+    Future.delayed(Duration.zero, () {
+      ConnectionManager.getInstance().getChannel().listen((event) {
+
+      }, onError: (e) {
+        debugPrint("ConnectionStatusBar ${e.toString()}");
         setState(() {
-          _currentState = success ? PingState.SUCCESS : PingState.FAILED;
+          _currentState = PingState.FAILED;
         });
-      }).timeout(Duration(seconds: 10));
+      },
+          onDone: () {
+            setState(() {
+              _startRetryTimer();
+              _currentState = PingState.FAILED;
+            });
+          });
     });
+
   }
 
   @override
@@ -92,5 +100,32 @@ class _ConnectionStatusBarState extends State<ConnectionStatusBar> {
         return "Pinging";
         break;
     }
+  }
+
+  void _startRetryTimer() {
+    if (_timer != null) {
+      return;
+    }
+    _timer = Timer.periodic(Duration(seconds: 5), (t) async {
+      setState(() {
+        _currentState = PingState.PINGING;
+      });
+      var isServerAlive = await ConnectionManager.getInstance().ping();
+      if (isServerAlive) {
+        ConnectionManager.getInstance().connectWebsocket();
+        t.cancel();
+        setState(() {
+          _currentState = PingState.SUCCESS;
+        });
+      } else {
+        setState(() {
+          _currentState = PingState.FAILED;
+        });
+      }
+    });
+  }
+
+  void _stopRetryTimer() {
+
   }
 }
